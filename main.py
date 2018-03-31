@@ -1,29 +1,30 @@
-import em
+import time
 import pandas as pd
-import cluster as cl
+from cluster import print_info
 
-# Setup
-filename = "sample EM data v2_labeled.csv"
-df = pd.read_csv(filename)
-num_iterations = 1
+import settings
+import em_wrapper as emw
 
-
-# Initialize cluster statistics
-num_clusters = 3
-clusters = [cl.Cluster() for i in range(num_clusters)]
-
-for i in range(num_iterations):
-    # Expectation - generate hidden matrix
-    em.expectation(df, clusters)
-
-    # Maximization - generate new MEANs and STDs
-    em.maximization(df, clusters)
-    exit(0)
-
-    # Maximum Likelyhood Expectation
-    em.maximum_likelyhood_expectation(df, clusters)
+start_time = time.time()
 
 
+# Setup environment variables
+file_path, nc, run_bic = settings.init_env()
+df = pd.read_csv(file_path, header=None)
+num_dimensions = df.shape[1]
 
 
+# Run E w||w/o BIC
+ll = None
+bic = None
+clusters = None
+if run_bic:
+    ll, bic, clusters = emw.bayesian_information_criterion(df)
+else:
+    ll, clusters = emw.em_random_restarts(10, nc, df)
 
+
+# Print Results
+print '# ####### Final Result ####### #'
+print_info(clusters, ll, bic)
+print 'Total Time:', time.time() - start_time, 'seconds'
